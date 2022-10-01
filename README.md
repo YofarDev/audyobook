@@ -1,8 +1,8 @@
-# audyobook (mobile)
+# audyobook (Android & ios)
 
-![](screen_player.png)
+<img src="https://github.com/YofarDev/audyobook/blob/main/screen_player.jpg" width="300">
 
-Audiobook player sync between mobile and desktop
+Audiobook player sync between mobile and desktop made with flutter
 
 ## Main libraries used
 

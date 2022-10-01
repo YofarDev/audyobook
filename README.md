@@ -10,6 +10,12 @@ The current position for the current audio file playing is saved on server (on f
 
 The code source for the desktop app (Linux/Windows) is very similar to this one except for some packages.
 
+## How does it work?
+
+The current position for the current audio file playing is saved on server (on firestore) automatically every 30s, so it can be sync between mobile & desktop apps. The id of the audio file is it's path from the "Audiobooks" folder, so it needs to be the same on all devices.
+
+The code source for the desktop app (Linux/Windows) is very similar to this one except for some packages.
+
 ## Main libraries used
 
 Audio player and background service :

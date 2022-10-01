@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "955698548905",
+    "project_id": "audyoplayer",
+    "storage_bucket": "audyoplayer.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:955698548905:android:168a817a97051d2eb2d9b8",
+        "android_client_info": {
+          "package_name": "com.example.audyobook"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "955698548905-c89dk7htr31bggkmrlgpif4hn7grd25h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhTtuGErjHU5QsQlxttYu2sWwfu7sxTuA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "955698548905-c89dk7htr31bggkmrlgpif4hn7grd25h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

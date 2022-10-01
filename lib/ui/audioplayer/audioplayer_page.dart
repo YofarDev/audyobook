@@ -1,0 +1,356 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'dart:developer';
+import 'dart:io';
+import 'dart:ui';
+
+import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
+import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:pausable_timer/pausable_timer.dart';
+
+import '../../models/audiobook.dart';
+import '../../res/app_colors.dart';
+import '../../services/audiobooks_service.dart';
+import '../../services/shared_preferences_service.dart';
+import '../../utils/extensions.dart';
+import '../widgets/loading_widget.dart';
+import 'increment_btn.dart';
+import 'toggle_speed_btns.dart';
+
+class AudioplayerPage extends StatefulWidget {
+  final Audiobook audiobook;
+
+  const AudioplayerPage({
+    super.key,
+    required this.audiobook,
+  });
+
+  @override
+  _AudioplayerPageState createState() => _AudioplayerPageState();
+}
+
+class _AudioplayerPageState extends State<AudioplayerPage> {
+  bool _ready = false;
+  final AudioPlayer _player = AudioPlayer();
+  bool _isPlaying = false;
+  late Duration _currentPosition;
+  late Duration _duration;
+  double _currentSpeed = 1;
+  late PausableTimer _timer;
+  bool _syncToServer = false;
+
+  @override
+  void initState() {
+    super.initState();
+    log(widget.audiobook.path);
+    _initPlayer();
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    _player.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(
+        body: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            if (widget.audiobook.artworkPath != null) _background(),
+            if (_ready) _playerWidgets() else LoadingWidget(),
+            _topBtns(),
+          ],
+        ),
+      ),
+    );
+  }
+
+//////////////////////////////// WIDGETS ////////////////////////////////
+
+  Widget _background() => Container(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            fit: BoxFit.fitHeight,
+            image: FileImage(
+              File(widget.audiobook.artworkPath!),
+            ),
+            opacity: 0.4,
+          ),
+        ),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Container(
+            color: AppColors.primary.withOpacity(0.08),
+          ),
+          // ),
+        ),
+      );
+
+  Widget _playerWidgets() => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          children: <Widget>[
+            const Spacer(),
+            if (widget.audiobook.artworkPath != null) _artwork(),
+            const SizedBox(height: 24),
+            _nameWidget(),
+            const SizedBox(height: 24),
+            _playerControls(),
+            const SizedBox(height: 24),
+            _seekBar(),
+            const Spacer(),
+            _speedControls(),
+            const Spacer(),
+          ],
+        ),
+      );
+
+  Widget _speedControls() => Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(
+              (_currentSpeed != 1) ? _getRealDuration() : " ",
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ),
+          ToggleSpeedBtns(
+            currentSpeed: _currentSpeed,
+            onChanged: _onSpeedChanged,
+          ),
+        ],
+      );
+
+  Widget _playerControls() => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          IncrementBtn(
+            value: -30,
+            onPressed: _onIncrementBtnPressed,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _playPauseBtn(),
+          ),
+          IncrementBtn(
+            value: 30,
+            onPressed: _onIncrementBtnPressed,
+          ),
+        ],
+      );
+
+  Widget _topBtns() => Positioned(
+        left: 16,
+        top: 0,
+        right: 16,
+        child: Row(
+          children: <Widget>[
+            IconButton(
+              onPressed: _onBackArrowPressed,
+              icon: const Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+              ),
+            ),
+            const Spacer(),
+            Column(
+              children: <Widget>[
+                IconButton(
+                  onPressed: _onCloudUploadPressed,
+                  icon: Icon(
+                    Icons.cloud_upload,
+                    color: _syncToServer ? AppColors.primary : Colors.white,
+                  ),
+                ),
+                const Text(
+                  "Sauvegarder",
+                  style: TextStyle(color: Colors.white, fontSize: 10),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Column(
+              children: <Widget>[
+                IconButton(
+                  onPressed: _onCloudDownloadPressed,
+                  icon: const Icon(
+                    Icons.cloud_download,
+                    color: Colors.white,
+                  ),
+                ),
+                const Text(
+                  "Charger",
+                  style: TextStyle(color: Colors.white, fontSize: 10),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+  Widget _playPauseBtn() => FloatingActionButton(
+        onPressed: _onPlayPauseBtnPressed,
+        child: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+      );
+
+  Widget _seekBar() => StreamBuilder<Duration>(
+        stream: _player.positionStream,
+        builder: (BuildContext context, AsyncSnapshot<Duration> snapshot) {
+          _currentPosition = snapshot.data ?? Duration.zero;
+
+          return ProgressBar(
+            progressBarColor: AppColors.primary,
+            thumbColor: AppColors.primary,
+            baseBarColor: Colors.white.withOpacity(0.24),
+            progress: _currentPosition,
+            timeLabelTextStyle: const TextStyle(color: Colors.white),
+            total: _duration,
+            onSeek: (Duration duration) {
+              _player.seek(duration);
+            },
+          );
+        },
+      );
+  Widget _artwork() => ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        // ignore: use_decorated_box
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              width: 2,
+              color: Colors.white70,
+            ),
+          ),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height / 3,
+            child: Image.file(File(widget.audiobook.artworkPath!)),
+          ),
+        ),
+      );
+
+  Widget _nameWidget() => Text(
+        widget.audiobook.name,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+
+//////////////////////////////// LISTENERS ////////////////////////////////
+
+  void _onBackArrowPressed() {
+    _player.dispose();
+    Navigator.of(context).pop();
+  }
+
+  void _onPlayPauseBtnPressed() {
+    if (_isPlaying) {
+      _player.pause();
+      _timer.pause();
+    } else {
+      _player.play();
+      _timer.start();
+    }
+    setState(() {
+      _isPlaying = !_isPlaying;
+    });
+  }
+
+  void _onIncrementBtnPressed(int value) {
+    final Duration pos = Duration(
+      seconds: (_player.position).inSeconds + value,
+    );
+    _player.seek(pos);
+  }
+
+  void _onSpeedChanged(double value) {
+    _player.setSpeed(value);
+
+    setState(() {
+      _currentSpeed = value;
+    });
+  }
+
+  void _onCloudDownloadPressed() async {
+    _currentPosition =
+        await AudiobookService.getPositionFromServer(widget.audiobook.id);
+    _player.seek(_currentPosition);
+  }
+
+  void _onCloudUploadPressed() async {
+    setState(() {
+      _syncToServer = !_syncToServer;
+    });
+    await _savePositionOnServer();
+  }
+
+//////////////////////////////// FUNCTIONS ////////////////////////////////
+
+  void _initPlayer() async {
+    _player.setAudioSource(widget.audiobook.toAudioSource());
+    _player.play();
+    _isPlaying = true;
+    _duration = widget.audiobook.duration;
+    _currentPosition = widget.audiobook.currentPosition;
+    _player.seek(_currentPosition);
+    _player.setSpeed(_currentSpeed);
+    _startTimer();
+    setState(() {
+      _ready = true;
+    });
+  }
+
+  void _startTimer() {
+    _timer = PausableTimer(const Duration(seconds: 1), () {
+      setState(() {});
+      if (!mounted) return;
+
+      // Save locally every 5s
+      if (_timer.tick % 5 == 0) {
+        _savePositionLocally();
+      }
+      // Save on server every 30s
+      if (_timer.tick % 30 == 0 && _syncToServer) {
+        _savePositionOnServer();
+      }
+      _timer
+        ..reset()
+        ..start();
+    });
+    _timer.start();
+  }
+
+  Future<void> _savePositionOnServer() async {
+    await AudiobookService.savePositionToServer(
+      widget.audiobook.id,
+      _currentPosition,
+    );
+  }
+
+  void _savePositionLocally() async {
+    widget.audiobook.currentPosition = _currentPosition;
+    await SharedPreferencesService.saveAudiobookInCache(widget.audiobook);
+  }
+
+  String _getRealDuration() {
+    final String left =
+        ((widget.audiobook.duration.inSeconds - _currentPosition.inSeconds) *
+                (1 / _currentSpeed))
+            .toInt()
+            .getFormatedTimer();
+    final String length =
+        (widget.audiobook.duration.inSeconds * (1 / _currentSpeed))
+            .toInt()
+            .getFormatedTimer();
+    return "Temps restant réel :   -$left / $length";
+  }
+}

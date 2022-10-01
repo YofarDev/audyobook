@@ -1,0 +1,53 @@
+name: audyobook
+description: Audiobook player sync between mobile and desktop
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.19.0-250.0.dev <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Firebase stuff
+  firebase_core:
+  cloud_firestore:
+  # Help you have a better code
+  lint:
+  # Audio player
+  just_audio:
+  # To play audio in background
+  just_audio_background:
+  # To read metadata from audio files
+  audiotagger:
+  # Seek bar
+  audio_video_progress_bar:
+  # To read files
+  path_provider:
+  external_path:
+  # Shared preferences
+  shared_preferences:
+  # Permissions handler
+  permission_handler:
+  # Pausable timer
+  pausable_timer:
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^2.0.0
+  flutter_launcher_icons:
+
+flutter_icons:
+  android: "launcher_icon"
+  image_path: "assets/logo.png"
+  min_sdk_android: 21
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/

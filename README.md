@@ -17,7 +17,7 @@ Audio player and background service :
 - [just_audio](https://pub.dev/packages/just_audio)
 - [just_audio_background](https://pub.dev/packages/just_audio_background)
 
-Controls from lockscreen & notifications center :
+Controls from lockscreen & notifications center on Android :
 
 <img src="https://github.com/YofarDev/audyobook/blob/main/screen_lockscreen.jpg" width="300"> <img src="https://github.com/YofarDev/audyobook/blob/main/screen_notifcenter.jpg" width="300">
 

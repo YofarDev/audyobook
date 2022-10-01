@@ -26,8 +26,9 @@ class FolderViewPage extends StatefulWidget {
 
 class _FolderViewPageState extends State<FolderViewPage> {
   bool _ready = false;
-  final List<String> _children = <String>[];
+  final List<String> _folders = <String>[];
   final List<Audiobook> _audiobooks = <Audiobook>[];
+
   bool isRoot = true;
   final Set<String> _currentNavigation = <String>{};
   int _currentIndex = 0;
@@ -56,25 +57,29 @@ class _FolderViewPageState extends State<FolderViewPage> {
 //////////////////////////////// WIDGETS ////////////////////////////////
 
   Widget _childrenFolderList() {
-    if (_children.isEmpty) {
+    if (_folders.isEmpty && _audiobooks.isEmpty) {
       return const Center(child: Text("(vide)"));
     } else {
       return Expanded(
         child: ListView.builder(
           shrinkWrap: true,
-          itemCount: _children.length,
+          itemCount: _folders.length + _audiobooks.length,
           itemBuilder: (BuildContext context, int index) {
-            return _childItem(_children[index]);
+            if (index < _folders.length && _folders.isNotEmpty) {
+              return _folderItem(_folders[index]);
+            } else if (_audiobooks.isNotEmpty) {
+              final int realIndex = index - _folders.length;
+              return _audiobookItem(_audiobooks[realIndex]);
+            }
           },
         ),
       );
     }
   }
 
-  Widget _childItem(String path) {
-    final bool isDirectory = Directory(path).existsSync();
+  Widget _folderItem(String path) {
     return InkWell(
-      onTap: () => isDirectory ? _onFolderTap(path) : _onAudioFileTap(path),
+      onTap: () => _onFolderTap(path),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: DecoratedBox(
@@ -83,15 +88,44 @@ class _FolderViewPageState extends State<FolderViewPage> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: ListTile(
-            leading: isDirectory
-                ? const Icon(Icons.folder)
-                : const Icon(Icons.play_arrow),
+            leading: const Icon(Icons.folder),
             title: Text(path.substring(path.lastIndexOf('/') + 1)),
           ),
         ),
       ),
     );
   }
+
+  Widget _audiobookItem(Audiobook audiobook) {
+    return InkWell(
+      onTap: () => _onAudioFileTap(audiobook.index),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: ListTile(
+            leading: const Icon(Icons.play_arrow),
+            trailing: audiobook.completed ? _badgeCompleted() : null,
+            title: Text(
+              audiobook.path.substring(audiobook.path.lastIndexOf('/') + 1),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _badgeCompleted() => Container(
+        height: 12,
+        width: 12,
+        decoration: BoxDecoration(
+          color: AppColors.pastille,
+          borderRadius: BorderRadius.circular(100),
+        ),
+      );
 
 //////////////////////////////// LISTENERS ////////////////////////////////
 
@@ -103,13 +137,11 @@ class _FolderViewPageState extends State<FolderViewPage> {
     _getChildren(path);
   }
 
-  void _onAudioFileTap(String path) {
-    final Audiobook audiobook = _audiobooks
-        .firstWhere((Audiobook a) => a.id == AppUtils.getIdFromPath(path));
+  void _onAudioFileTap(int index) {
     Navigator.of(context).push(
       MaterialPageRoute<dynamic>(
         builder: (BuildContext context) =>
-            AudioplayerPage(audiobook: audiobook),
+            AudioplayerPage(audiobooks: _audiobooks, index: index),
       ),
     );
   }
@@ -126,17 +158,21 @@ class _FolderViewPageState extends State<FolderViewPage> {
 
   void _getChildren(String path) async {
     final Directory dir = Directory(path);
-
-    _children.clear();
+    _folders.clear();
     _audiobooks.clear();
     for (final FileSystemEntity item in dir.listSync()) {
-      // If not a folder, get infos
+      // If not a folder, get audiobook item
+
       if (!Directory(item.path).existsSync()) {
-        _audiobooks.add(await _getAudiobook(item.path));
+        final Audiobook audiobook = await _getAudiobook(item.path);
+
+        _audiobooks.add(audiobook);
+      } else {
+        _folders.add(item.path);
       }
-      _children.add(item.path);
     }
-    _children.sort();
+    _sortLists();
+
     isRoot = path == widget.folderPath;
 
     if (!isRoot) {
@@ -152,8 +188,19 @@ class _FolderViewPageState extends State<FolderViewPage> {
   }
 
   Future<Audiobook> _getAudiobook(String path) async {
-    final Audiobook audiobook = await AudiobookService.getAudiobook(path);
+    final Audiobook audiobook =
+        await AudiobookService.getAudiobook(path, forceReload: false);
     log(audiobook.toString());
     return audiobook;
+  }
+
+  void _sortLists() {
+    _folders.sort();
+    _audiobooks.sort(
+      (Audiobook a, Audiobook b) => a.name.compareTo(b.name),
+    );
+    for (int i = 0; i < _audiobooks.length; i++) {
+      _audiobooks[i].index = i;
+    }
   }
 }

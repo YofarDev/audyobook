@@ -18,11 +18,13 @@ import 'increment_btn.dart';
 import 'toggle_speed_btns.dart';
 
 class AudioplayerPage extends StatefulWidget {
-  final Audiobook audiobook;
+  final List<Audiobook> audiobooks;
+  final int index;
 
   const AudioplayerPage({
     super.key,
-    required this.audiobook,
+    required this.audiobooks,
+    required this.index,
   });
 
   @override
@@ -30,8 +32,11 @@ class AudioplayerPage extends StatefulWidget {
 }
 
 class _AudioplayerPageState extends State<AudioplayerPage> {
-  bool _ready = false;
   final AudioPlayer _player = AudioPlayer();
+  late Audiobook _currentAudiobook;
+  late int _currentIndex;
+  bool _ready = false;
+
   bool _isPlaying = false;
   late Duration _currentPosition;
   late Duration _duration;
@@ -42,7 +47,8 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
   @override
   void initState() {
     super.initState();
-    log(widget.audiobook.path);
+    _currentIndex = widget.index;
+    _currentAudiobook = _getCurrentAudiobook();
     _initPlayer();
   }
 
@@ -60,7 +66,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
         body: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            if (widget.audiobook.artworkPath != null) _background(),
+            if (_currentAudiobook.artworkPath != null) _background(),
             if (_ready) _playerWidgets() else LoadingWidget(),
             _topBtns(),
           ],
@@ -78,7 +84,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
           image: DecorationImage(
             fit: BoxFit.fitHeight,
             image: FileImage(
-              File(widget.audiobook.artworkPath!),
+              File(_currentAudiobook.artworkPath!),
             ),
             opacity: 0.4,
           ),
@@ -97,7 +103,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
         child: Column(
           children: <Widget>[
             const Spacer(),
-            if (widget.audiobook.artworkPath != null) _artwork(),
+            if (_currentAudiobook.artworkPath != null) _artwork(),
             const SizedBox(height: 24),
             _nameWidget(),
             const SizedBox(height: 24),
@@ -232,13 +238,13 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
           ),
           child: SizedBox(
             height: MediaQuery.of(context).size.height / 3,
-            child: Image.file(File(widget.audiobook.artworkPath!)),
+            child: Image.file(File(_currentAudiobook.artworkPath!)),
           ),
         ),
       );
 
   Widget _nameWidget() => Text(
-        widget.audiobook.name,
+        _currentAudiobook.name,
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
@@ -282,7 +288,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
 
   void _onCloudDownloadPressed() async {
     _currentPosition =
-        await AudiobookService.getPositionFromServer(widget.audiobook.id);
+        await AudiobookService.getPositionFromServer(_currentAudiobook.id);
     _player.seek(_currentPosition);
   }
 
@@ -293,19 +299,55 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
     await _savePositionOnServer();
   }
 
+  void _onCompleted() async {
+    _timer.cancel();
+    setState(() {
+      _ready = false;
+    });
+
+    _currentAudiobook.completed = true;
+    await SharedPreferencesService.saveAudiobookInCache(
+      _currentAudiobook,
+    );
+    if (_currentIndex + 1 <= widget.audiobooks.length) {
+      _currentIndex++;
+    } else {
+      _currentIndex = 0;
+    }
+    _currentAudiobook = _getCurrentAudiobook();
+
+    _initPlayer();
+  }
+
 //////////////////////////////// FUNCTIONS ////////////////////////////////
 
-  void _initPlayer() async {
-    _player.setAudioSource(widget.audiobook.toAudioSource());
+  Future<void> _initPlayer() async {
+    await _player.setAudioSource(_currentAudiobook.toAudioSource());
+    _duration = _currentAudiobook.duration;
+    _currentPosition = _currentAudiobook.currentPosition;
+
+    await _player.seek(_currentPosition);
+    await _player.setSpeed(_currentSpeed);
+    _initListeners();
     _player.play();
-    _isPlaying = true;
-    _duration = widget.audiobook.duration;
-    _currentPosition = widget.audiobook.currentPosition;
-    _player.seek(_currentPosition);
-    _player.setSpeed(_currentSpeed);
     _startTimer();
     setState(() {
       _ready = true;
+    });
+  }
+
+  void _initListeners() {
+    _player.playerStateStream.listen((PlayerState playerState) async {
+      if (playerState.processingState == ProcessingState.completed) {
+        if (!_ready) {
+          _initPlayer();
+        } else {
+          _onCompleted();
+        }
+      }
+      setState(() {
+        _isPlaying = playerState.playing;
+      });
     });
   }
 
@@ -331,26 +373,30 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
 
   Future<void> _savePositionOnServer() async {
     await AudiobookService.savePositionToServer(
-      widget.audiobook.id,
+      _currentAudiobook.id,
       _currentPosition,
     );
   }
 
   void _savePositionLocally() async {
-    widget.audiobook.currentPosition = _currentPosition;
-    await SharedPreferencesService.saveAudiobookInCache(widget.audiobook);
+    _currentAudiobook.currentPosition = _currentPosition;
+    await SharedPreferencesService.saveAudiobookInCache(_currentAudiobook);
   }
 
   String _getRealDuration() {
     final String left =
-        ((widget.audiobook.duration.inSeconds - _currentPosition.inSeconds) *
+        ((_currentAudiobook.duration.inSeconds - _currentPosition.inSeconds) *
                 (1 / _currentSpeed))
             .toInt()
             .getFormatedTimer();
     final String length =
-        (widget.audiobook.duration.inSeconds * (1 / _currentSpeed))
+        (_currentAudiobook.duration.inSeconds * (1 / _currentSpeed))
             .toInt()
             .getFormatedTimer();
     return "Temps restant réel :   -$left / $length";
   }
+
+  Audiobook _getCurrentAudiobook() => widget.audiobooks.firstWhere(
+        (Audiobook a) => a.index == _currentIndex,
+      );
 }

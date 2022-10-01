@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import '../../models/audiobook.dart';
 import '../../res/app_colors.dart';
 import '../../services/audiobooks_service.dart';
-import '../../utils/app_utils.dart';
 import '../audioplayer/audioplayer_page.dart';
 import '../widgets/folder_app_bar.dart';
 import '../widgets/loading_widget.dart';
@@ -70,6 +69,8 @@ class _FolderViewPageState extends State<FolderViewPage> {
             } else if (_audiobooks.isNotEmpty) {
               final int realIndex = index - _folders.length;
               return _audiobookItem(_audiobooks[realIndex]);
+            } else {
+              return null;
             }
           },
         ),
@@ -143,7 +144,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
         builder: (BuildContext context) =>
             AudioplayerPage(audiobooks: _audiobooks, index: index),
       ),
-    );
+      ).then((_) => setState(() {}));
   }
 
   void _onBackArrowPressed() {
@@ -162,7 +163,6 @@ class _FolderViewPageState extends State<FolderViewPage> {
     _audiobooks.clear();
     for (final FileSystemEntity item in dir.listSync()) {
       // If not a folder, get audiobook item
-
       if (!Directory(item.path).existsSync()) {
         final Audiobook audiobook = await _getAudiobook(item.path);
 
@@ -188,8 +188,10 @@ class _FolderViewPageState extends State<FolderViewPage> {
   }
 
   Future<Audiobook> _getAudiobook(String path) async {
-    final Audiobook audiobook =
-        await AudiobookService.getAudiobook(path, forceReload: false);
+    final Audiobook audiobook = await AudiobookService.getAudiobook(
+      path,
+    //  forceReload: false,
+    );
     log(audiobook.toString());
     return audiobook;
   }

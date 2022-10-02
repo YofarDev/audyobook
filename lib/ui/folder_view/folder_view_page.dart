@@ -199,8 +199,10 @@ class _FolderViewPageState extends State<FolderViewPage> {
         _folders.add(item.path);
       }
       i++;
+      int progress = (i / total * 100).toInt();
+      if (progress == 100) progress = 0;
       setState(() {
-        _progress = "${(i / total * 100).toInt()}%";
+        _progress = "$progress%";
       });
     }
     _sortLists();

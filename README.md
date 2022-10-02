@@ -8,6 +8,8 @@ Audio files player sync between mobile and desktop made with flutter
 
 The current position for the current audio file playing is saved on server (on firestore) automatically every 30s. The id of the audio file is its path from the "Audiobooks" folder, so it needs to be the same on all devices.
 
+(I didn't write any authentication system because I did this app only for myself)
+
 
 ## Main libraries used
 

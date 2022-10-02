@@ -46,7 +46,7 @@ class AudiobookService {
 
     audiobook.currentPosition = await getPositionFromServer(audiobook.id);
     audiobook.completed = audiobook.currentPosition == audiobook.duration;
-    
+
     await SharedPreferencesService.saveAudiobookInCache(audiobook);
 
     return audiobook;
@@ -59,9 +59,14 @@ class AudiobookService {
   }
 
   static Future<Duration> getPositionFromServer(String id) async {
-    final DocumentSnapshot<Object> value = await firestore.doc(id).get();
-    final Map<String, dynamic> map = value.data()! as Map<String, dynamic>;
-    return Duration(seconds: map['position'] as int? ?? 0);
+    try {
+      final DocumentSnapshot<Object> value = await firestore.doc(id).get();
+      final Map<String, dynamic> map = value.data()! as Map<String, dynamic>;
+      return Duration(seconds: map['position'] as int? ?? 0);
+      
+    } catch (e) {
+      return Duration.zero;
+    }
   }
 
   static Future<String> getArtworkPath(String path) async {

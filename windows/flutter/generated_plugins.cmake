@@ -3,8 +3,8 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  audioplayers_windows
   desktop_window
-  just_audio_windows
   permission_handler_windows
 )
 

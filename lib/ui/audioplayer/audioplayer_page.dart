@@ -10,6 +10,7 @@ import 'package:pausable_timer/pausable_timer.dart';
 import '../../models/audiobook.dart';
 import '../../res/app_colors.dart';
 import '../../services/audiobooks_service.dart';
+import '../../services/audioplayer_platform_switch.dart';
 import '../../services/shared_preferences_service.dart';
 import '../../utils/extensions.dart';
 import '../widgets/loading_widget.dart';
@@ -17,7 +18,7 @@ import 'artwork.dart';
 import 'increment_btn.dart';
 import 'toggle_speed_btns.dart';
 
-class AudioplayerPage extends StatefulWidget  {
+class AudioplayerPage extends StatefulWidget {
   final List<Audiobook> audiobooks;
   final int index;
 
@@ -32,7 +33,7 @@ class AudioplayerPage extends StatefulWidget  {
 }
 
 class _AudioplayerPageState extends State<AudioplayerPage> {
-  final AudioPlayer _player = AudioPlayer();
+  late var _player;
   late Audiobook _currentAudiobook;
   late int _currentIndex;
   bool _ready = false;
@@ -47,6 +48,8 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
   @override
   void initState() {
     super.initState();
+    AudioplayerPlatformSwitch.init();
+    _player = AudioplayerPlatformSwitch.player;
     _currentIndex = widget.index;
     _currentAudiobook = _getCurrentAudiobook();
     _initPlayer();
@@ -55,7 +58,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
   @override
   void dispose() {
     _timer.cancel();
-    _player.dispose();
+    AudioplayerPlatformSwitch.dispose();
     super.dispose();
   }
 
@@ -208,7 +211,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
       );
 
   Widget _seekBar() => StreamBuilder<Duration>(
-        stream: _player.positionStream,
+        stream: AudioplayerPlatformSwitch.getPositionStream(),
         builder: (BuildContext context, AsyncSnapshot<Duration> snapshot) {
           _currentPosition = snapshot.data ?? Duration.zero;
 
@@ -240,7 +243,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
 //////////////////////////////// LISTENERS ////////////////////////////////
 
   void _onBackArrowPressed() {
-    _player.dispose();
+    AudioplayerPlatformSwitch.dispose();
     Navigator.of(context).pop();
   }
 
@@ -249,7 +252,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
       _player.pause();
       _timer.pause();
     } else {
-      _player.play();
+      AudioplayerPlatformSwitch.play();
       _timer.start();
     }
     setState(() {
@@ -257,15 +260,18 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
     });
   }
 
-  void _onIncrementBtnPressed(int value) {
+  void _onIncrementBtnPressed(int value) async {
     final Duration pos = Duration(
-      seconds: (_player.position).inSeconds + value,
+      seconds: (await AudioplayerPlatformSwitch.getCurrentPosition() ??
+                  Duration.zero)
+              .inSeconds +
+          value,
     );
     _player.seek(pos);
   }
 
   void _onSpeedChanged(double value) {
-    _player.setSpeed(value);
+    AudioplayerPlatformSwitch.setSpeed(value);
 
     setState(() {
       _currentSpeed = value;
@@ -311,7 +317,8 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
 //////////////////////////////// FUNCTIONS ////////////////////////////////
 
   Future<void> _initPlayer() async {
-    await _player.setAudioSource(_currentAudiobook.toAudioSource());
+    //  await _player.setAudioSource(_currentAudiobook.toAudioSource());
+    await AudioplayerPlatformSwitch.setAudioSource(_currentAudiobook);
     _duration = _currentAudiobook.duration;
 
     _currentPosition = _currentAudiobook.isCompleted()
@@ -319,9 +326,10 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
         : _currentAudiobook.currentPosition;
 
     await _player.seek(_currentPosition);
-    await _player.setSpeed(_currentSpeed);
+    await AudioplayerPlatformSwitch.setSpeed(_currentSpeed);
     _initListeners();
-    _player.play();
+    AudioplayerPlatformSwitch.play();
+    _isPlaying = true;
     _startTimer();
     setState(() {
       _ready = true;
@@ -329,18 +337,28 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
   }
 
   void _initListeners() {
-    _player.playerStateStream.listen((PlayerState playerState) async {
-      if (playerState.processingState == ProcessingState.completed) {
+    if (Platform.isAndroid || Platform.isIOS) {
+      _player.playerStateStream.listen((PlayerState playerState) async {
+        if (playerState.processingState == ProcessingState.completed) {
+          if (!_ready) {
+            _initPlayer();
+          } else {
+            _onCompleted();
+          }
+        }
+        setState(() {
+          _isPlaying = playerState.playing;
+        });
+      });
+    } else {
+      _player.onPlayerComplete.listen((void event) async {
         if (!_ready) {
           _initPlayer();
         } else {
           _onCompleted();
         }
-      }
-      setState(() {
-        _isPlaying = playerState.playing;
       });
-    });
+    }
   }
 
   void _startTimer() {

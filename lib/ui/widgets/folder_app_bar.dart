@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import '../../res/app_colors.dart';
+import '../../utils/app_constants.dart';
 
 class FolderAppBar extends StatelessWidget {
   final String title;
@@ -34,7 +35,7 @@ class FolderAppBar extends StatelessWidget {
           if (isRoot) const Spacer() else const SizedBox(width: 16),
           Flexible(
             child: Text(
-              title.substring(title.lastIndexOf('/') + 1),
+              title.substring(title.lastIndexOf(AppConstants.getSlash()) + 1),
               maxLines: 1,
               style: const TextStyle(
                 color: Colors.white,

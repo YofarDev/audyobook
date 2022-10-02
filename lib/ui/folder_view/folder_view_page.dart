@@ -38,8 +38,6 @@ class _FolderViewPageState extends State<FolderViewPage> {
   final Set<String> _currentNavigation = <String>{};
   int _currentIndex = 0;
 
-  String _progress = "0%";
-
   @override
   void initState() {
     super.initState();
@@ -62,11 +60,6 @@ class _FolderViewPageState extends State<FolderViewPage> {
           Column(
             children: <Widget>[
               const SizedBox(height: 32),
-              Text(
-                _progress,
-                style: TextStyle(color: AppColors.primary, fontSize: 20),
-              ),
-              const SizedBox(height: 16),
               LoadingWidget(),
             ],
           ),
@@ -118,7 +111,9 @@ class _FolderViewPageState extends State<FolderViewPage> {
           child: ListTile(
             leading: const Icon(Icons.folder),
             title: Text(
-                path.substring(path.lastIndexOf(AppConstants.getSlash()) + 1)),
+              path.substring(path.lastIndexOf(AppConstants.getSlash()) + 1),
+              style: const TextStyle(fontFamily: "Montserrat"),
+            ),
           ),
         ),
       ),
@@ -140,7 +135,9 @@ class _FolderViewPageState extends State<FolderViewPage> {
             trailing: _getPastille(audiobook),
             title: Text(
               audiobook.path.substring(
-                  audiobook.path.lastIndexOf(AppConstants.getSlash()) + 1),
+                audiobook.path.lastIndexOf(AppConstants.getSlash()) + 1,
+              ),
+              style: const TextStyle(fontFamily: "Montserrat"),
             ),
           ),
         ),
@@ -257,8 +254,6 @@ class _FolderViewPageState extends State<FolderViewPage> {
     _folders.clear();
     _audiobooks.clear();
     final List<FileSystemEntity> filesList = dir.listSync();
-    int i = 0;
-    final int total = filesList.length;
     for (final FileSystemEntity item in filesList) {
       // If not a folder, get audiobook item
       if (!Directory(item.path).existsSync()) {
@@ -267,12 +262,6 @@ class _FolderViewPageState extends State<FolderViewPage> {
       } else {
         _folders.add(item.path);
       }
-      i++;
-      int progress = (i / total * 100).toInt();
-      if (progress == 100) progress = 0;
-      setState(() {
-        _progress = "$progress%";
-      });
     }
     await _getSavedPositions();
     _sortLists();

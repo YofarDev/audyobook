@@ -147,7 +147,7 @@ class AudiobookService {
   }
 
   static Future<Map<String, Duration>> getAllPostionsForAlbum(
-      String album) async {
+      String album,) async {
     final Map<String, Duration> map = <String, Duration>{};
     // MOBILE
     if (Platform.isAndroid || Platform.isIOS) {

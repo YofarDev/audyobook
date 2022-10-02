@@ -17,6 +17,8 @@ Audio player and background service :
 
 - [just_audio](https://pub.dev/packages/just_audio)
 - [just_audio_background](https://pub.dev/packages/just_audio_background) (for mobile only)
+Just_audio doesn't seem to work yet for Windows/Linux, so instead I used :
+- [audioplayers](https://pub.dev/packages/audioplayers) 
 
 Controls from lockscreen & notification center on Android :
 

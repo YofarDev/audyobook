@@ -24,3 +24,5 @@ Just_audio doesn't seem to work yet for Windows/Linux, so instead I used :
 Controls from lockscreen & notification center on Android :
 
 <img src="https://github.com/YofarDev/audyobook/blob/main/screen_lockscreen.jpg" width="300"> <img src="https://github.com/YofarDev/audyobook/blob/main/screen_notifcenter.jpg" width="300">
+
+Tested and working on Android, Windows & Linux.

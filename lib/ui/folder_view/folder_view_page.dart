@@ -2,11 +2,17 @@
 import 'dart:developer';
 import 'dart:io';
 
+// ignore: depend_on_referenced_packages
+import 'package:collection/collection.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../models/audiobook.dart';
 import '../../res/app_colors.dart';
 import '../../services/audiobooks_service.dart';
+import '../../utils/app_constants.dart';
+import '../../utils/extensions.dart';
+import '../audioplayer/artwork.dart';
 import '../audioplayer/audioplayer_page.dart';
 import '../widgets/folder_app_bar.dart';
 import '../widgets/loading_widget.dart';
@@ -83,7 +89,13 @@ class _FolderViewPageState extends State<FolderViewPage> {
               return _folderItem(_folders[index]);
             } else if (_audiobooks.isNotEmpty) {
               final int realIndex = index - _folders.length;
-              return _audiobookItem(_audiobooks[realIndex]);
+              return Column(
+                children: <Widget>[
+                  if (realIndex == 0 && _audiobooks.isNotEmpty && _ready)
+                    _infosBook(),
+                  _audiobookItem(_audiobooks[realIndex]),
+                ],
+              );
             } else {
               return null;
             }
@@ -105,7 +117,8 @@ class _FolderViewPageState extends State<FolderViewPage> {
           ),
           child: ListTile(
             leading: const Icon(Icons.folder),
-            title: Text(path.substring(path.lastIndexOf('/') + 1)),
+            title: Text(
+                path.substring(path.lastIndexOf(AppConstants.getSlash()) + 1)),
           ),
         ),
       ),
@@ -126,7 +139,8 @@ class _FolderViewPageState extends State<FolderViewPage> {
             leading: const Icon(Icons.play_arrow),
             trailing: _getPastille(audiobook),
             title: Text(
-              audiobook.path.substring(audiobook.path.lastIndexOf('/') + 1),
+              audiobook.path.substring(
+                  audiobook.path.lastIndexOf(AppConstants.getSlash()) + 1),
             ),
           ),
         ),
@@ -147,6 +161,62 @@ class _FolderViewPageState extends State<FolderViewPage> {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(100),
+      ),
+    );
+  }
+
+  Widget _infosBook() {
+    int current = 0;
+    int total = 0;
+    for (final Audiobook audiobook in _audiobooks) {
+      current += audiobook.currentPosition.inSeconds;
+      total += audiobook.duration.inSeconds;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: <Widget>[
+          if (_audiobooks.first.artworkPath != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Artwork(artworkPath: _audiobooks.first.artworkPath!),
+            ),
+          Text(
+            "${(current / total * 100).toInt()}%",
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0, bottom: 4),
+            child: LinearProgressIndicator(
+              backgroundColor: AppColors.primary,
+              color: AppColors.pastille,
+              value: current / total,
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              Text(
+                current.getFormatedTimer(withHours: true),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                total.getFormatedTimer(withHours: true),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -193,7 +263,6 @@ class _FolderViewPageState extends State<FolderViewPage> {
       // If not a folder, get audiobook item
       if (!Directory(item.path).existsSync()) {
         final Audiobook audiobook = await _getAudiobook(item.path);
-
         _audiobooks.add(audiobook);
       } else {
         _folders.add(item.path);
@@ -205,6 +274,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
         _progress = "$progress%";
       });
     }
+    await _getSavedPositions();
     _sortLists();
 
     isRoot = path == widget.folderPath;
@@ -231,12 +301,25 @@ class _FolderViewPageState extends State<FolderViewPage> {
   }
 
   void _sortLists() {
-    _folders.sort();
+    _folders.sort(compareNatural);
     _audiobooks.sort(
       (Audiobook a, Audiobook b) => a.name.compareTo(b.name),
     );
     for (int i = 0; i < _audiobooks.length; i++) {
       _audiobooks[i].index = i;
+    }
+  }
+
+  Future<void> _getSavedPositions() async {
+    if (_audiobooks.isEmpty) {
+      return;
+    }
+    final Map<String, Duration> map =
+        await AudiobookService.getAllPostionsForAlbum(_audiobooks.first.album);
+    for (final Audiobook audiobook in _audiobooks) {
+      if (map[audiobook.id] != null) {
+        audiobook.currentPosition = map[audiobook.id]!;
+      }
     }
   }
 }

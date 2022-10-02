@@ -1,5 +1,8 @@
+import 'dart:io';
 
+import 'package:desktop_window/desktop_window.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firedart/firestore/firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,14 +14,20 @@ Future<void> main() async {
   // Call this first
   WidgetsFlutterBinding.ensureInitialized();
 
+  if (Platform.isAndroid || Platform.isIOS) {
 // To disable vertical orientation
-  SystemChrome.setPreferredOrientations(<DeviceOrientation>[
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+    SystemChrome.setPreferredOrientations(<DeviceOrientation>[
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
 
 // Init firebase
-  await Firebase.initializeApp();
+    await Firebase.initializeApp();
+  } else {
+    await DesktopWindow.setWindowSize(const Size(500, 900));
+    await DesktopWindow.setMinWindowSize(const Size(500, 900));
+    Firestore.initialize("audyoplayer");
+  }
 
   await AudioHandlerService.init();
 

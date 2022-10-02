@@ -21,8 +21,8 @@ class FolderAppBar extends StatelessWidget {
       color: AppColors.bgDarker,
       height: 64,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
+          if (!isRoot) const SizedBox(width: 16),
           if (!isRoot)
             IconButton(
               onPressed: onBackArrowPressed,
@@ -31,15 +31,19 @@ class FolderAppBar extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-          const Spacer(),
-          Text(
-            title.substring(title.lastIndexOf('/') + 1),
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+          if (isRoot) const Spacer() else const SizedBox(width: 16),
+          Flexible(
+            child: Text(
+              title.substring(title.lastIndexOf('/') + 1),
+              maxLines: 1,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
             ),
           ),
-          const Spacer(),
+          if (isRoot) const Spacer(),
         ],
       ),
     );

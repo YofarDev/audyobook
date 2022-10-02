@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:external_path/external_path.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../utils/app_constants.dart';
 import 'folder_view/folder_view_page.dart';
 import 'widgets/loading_widget.dart';
 
@@ -26,7 +30,9 @@ class _HomeState extends State<Home> {
     return SafeArea(
       child: Scaffold(
         body: GestureDetector(
-          onLongPress: _requestPermission,
+          onLongPress: (Platform.isAndroid || Platform.isIOS)
+              ? _requestPermission
+              : null,
           child: Column(
             children: <Widget>[
               if (_audiobooksFolderPath != null)
@@ -51,9 +57,15 @@ class _HomeState extends State<Home> {
 //////////////////////////////// FUNCTIONS ////////////////////////////////
 
   void _loadAudiobooksFolder() async {
-    final List<String> storages =
-        await ExternalPath.getExternalStorageDirectories();
-    _audiobooksFolderPath = "${storages[1]}/Documents/Audiobooks";
+    if (Platform.isAndroid || Platform.isIOS) {
+      final List<String> storages =
+          await ExternalPath.getExternalStorageDirectories();
+      _audiobooksFolderPath = "${storages[1]}/Documents/Audiobooks";
+    } else {
+      final Directory dir = await getApplicationDocumentsDirectory();
+      _audiobooksFolderPath = "${dir.path}${AppConstants.getSlash()}Audiobooks";
+    }
+
     setState(() {});
   }
 

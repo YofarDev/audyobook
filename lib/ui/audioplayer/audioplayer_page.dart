@@ -13,10 +13,11 @@ import '../../services/audiobooks_service.dart';
 import '../../services/shared_preferences_service.dart';
 import '../../utils/extensions.dart';
 import '../widgets/loading_widget.dart';
+import 'artwork.dart';
 import 'increment_btn.dart';
 import 'toggle_speed_btns.dart';
 
-class AudioplayerPage extends StatefulWidget {
+class AudioplayerPage extends StatefulWidget  {
   final List<Audiobook> audiobooks;
   final int index;
 
@@ -224,22 +225,8 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
           );
         },
       );
-  Widget _artwork() => ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        // ignore: use_decorated_box
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              width: 2,
-              color: Colors.white70,
-            ),
-          ),
-          child: SizedBox(
-            height: MediaQuery.of(context).size.height / 3,
-            child: Image.file(File(_currentAudiobook.artworkPath!)),
-          ),
-        ),
+  Widget _artwork() => Artwork(
+        artworkPath: _currentAudiobook.artworkPath!,
       );
 
   Widget _nameWidget() => Text(
@@ -287,7 +274,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
 
   void _onCloudDownloadPressed() async {
     _currentPosition =
-        await AudiobookService.getPositionFromServer(_currentAudiobook.id);
+        await AudiobookService.getPositionFromServer(_currentAudiobook);
     _player.seek(_currentPosition);
   }
 
@@ -304,12 +291,11 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
       _ready = false;
     });
 
-
     await SharedPreferencesService.saveAudiobookInCache(
       _currentAudiobook,
     );
     await AudiobookService.savePositionToServer(
-      widget.audiobooks[_currentIndex].id,
+      widget.audiobooks[_currentIndex],
       widget.audiobooks[_currentIndex].duration,
     );
     if (_currentIndex + 1 <= widget.audiobooks.length) {
@@ -327,7 +313,10 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
   Future<void> _initPlayer() async {
     await _player.setAudioSource(_currentAudiobook.toAudioSource());
     _duration = _currentAudiobook.duration;
-    _currentPosition = _currentAudiobook.currentPosition;
+
+    _currentPosition = _currentAudiobook.isCompleted()
+        ? Duration.zero
+        : _currentAudiobook.currentPosition;
 
     await _player.seek(_currentPosition);
     await _player.setSpeed(_currentSpeed);
@@ -376,7 +365,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
 
   Future<void> _savePositionOnServer() async {
     await AudiobookService.savePositionToServer(
-      _currentAudiobook.id,
+      _currentAudiobook,
       _currentPosition,
     );
   }

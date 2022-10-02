@@ -33,6 +33,14 @@ dependencies:
   permission_handler:
   # Pausable timer
   pausable_timer:
+  # (desktop)
+  firedart:
+  desktop_window:
+  mp3_info:
+  id3tag:
+  #just_audio_platform_interface:
+  just_audio_windows:
+  just_audio_mpv:
 
 dev_dependencies:
   flutter_test:

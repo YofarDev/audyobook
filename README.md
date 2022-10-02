@@ -1,6 +1,6 @@
 # Audyobook (Mobile & Desktop with Flutter)
 
-<img src="https://github.com/YofarDev/audyobook/blob/main/screen_player.jpg" width="300"> <img src="https://github.com/YofarDev/audyobook/blob/main/screen_listview.jpg" width="300">
+<img src="https://github.com/YofarDev/audyobook/blob/main/screen_listview.jpg" width="300"> <img src="https://github.com/YofarDev/audyobook/blob/main/screen_player.jpg" width="300">
 
 Audio files player sync between mobile and desktop made with flutter
 

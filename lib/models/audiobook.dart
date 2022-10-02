@@ -8,9 +8,9 @@ class Audiobook {
   String album;
   Duration duration;
   Duration currentPosition;
-  bool completed;
   String? artworkPath;
   late int index;
+  late bool completed;
 
   Audiobook({
     required this.id,
@@ -19,7 +19,6 @@ class Audiobook {
     required this.album,
     required this.duration,
     required this.currentPosition,
-    this.completed = false,
     this.artworkPath,
   });
 
@@ -45,7 +44,6 @@ class Audiobook {
       'album': album,
       'duration': duration.inSeconds,
       'currentPosition': currentPosition.inSeconds,
-      'completed': completed,
       'artworkPath': artworkPath,
     };
   }
@@ -62,7 +60,6 @@ class Audiobook {
       album: map['album'] as String,
       duration: Duration(seconds: map['duration'] as int),
       currentPosition: Duration(seconds: map['currentPosition'] as int),
-      completed: map['completed'] as bool,
       artworkPath: map['artworkPath'] as String?,
     );
   }

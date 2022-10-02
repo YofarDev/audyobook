@@ -44,6 +44,9 @@ class AudiobookService {
       artworkPath: artworkPath,
     );
 
+    audiobook.currentPosition = await getPositionFromServer(audiobook.id);
+    audiobook.completed = audiobook.currentPosition == audiobook.duration;
+    
     await SharedPreferencesService.saveAudiobookInCache(audiobook);
 
     return audiobook;

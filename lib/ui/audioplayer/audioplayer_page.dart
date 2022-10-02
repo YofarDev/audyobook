@@ -308,6 +308,10 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
     await SharedPreferencesService.saveAudiobookInCache(
       _currentAudiobook,
     );
+    await AudiobookService.savePositionToServer(
+      widget.audiobooks[_currentIndex].id,
+      widget.audiobooks[_currentIndex].duration,
+    );
     if (_currentIndex + 1 <= widget.audiobooks.length) {
       _currentIndex++;
     } else {

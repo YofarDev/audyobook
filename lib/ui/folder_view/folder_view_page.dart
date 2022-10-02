@@ -32,6 +32,8 @@ class _FolderViewPageState extends State<FolderViewPage> {
   final Set<String> _currentNavigation = <String>{};
   int _currentIndex = 0;
 
+  String _progress = "0%";
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +50,20 @@ class _FolderViewPageState extends State<FolderViewPage> {
           isRoot: isRoot,
           onBackArrowPressed: _onBackArrowPressed,
         ),
-        if (_ready) _childrenFolderList() else LoadingWidget(),
+        if (_ready)
+          _childrenFolderList()
+        else
+          Column(
+            children: <Widget>[
+              const SizedBox(height: 32),
+              Text(
+                _progress,
+                style: TextStyle(color: AppColors.primary, fontSize: 20),
+              ),
+              const SizedBox(height: 16),
+              LoadingWidget(),
+            ],
+          ),
       ],
     );
   }
@@ -109,7 +124,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
           ),
           child: ListTile(
             leading: const Icon(Icons.play_arrow),
-            trailing: audiobook.completed ? _badgeCompleted() : null,
+            trailing: _getPastille(audiobook),
             title: Text(
               audiobook.path.substring(audiobook.path.lastIndexOf('/') + 1),
             ),
@@ -119,14 +134,22 @@ class _FolderViewPageState extends State<FolderViewPage> {
     );
   }
 
-  Widget _badgeCompleted() => Container(
-        height: 12,
-        width: 12,
-        decoration: BoxDecoration(
-          color: AppColors.pastille,
-          borderRadius: BorderRadius.circular(100),
-        ),
-      );
+  Widget _getPastille(Audiobook audiobook) {
+    Color? color;
+    if (audiobook.isCompleted()) {
+      color = AppColors.pastille;
+    } else if (audiobook.currentPosition.inSeconds > 0) {
+      color = Colors.green;
+    }
+    return Container(
+      height: 12,
+      width: 12,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(100),
+      ),
+    );
+  }
 
 //////////////////////////////// LISTENERS ////////////////////////////////
 
@@ -139,12 +162,14 @@ class _FolderViewPageState extends State<FolderViewPage> {
   }
 
   void _onAudioFileTap(int index) {
-    Navigator.of(context).push(
-      MaterialPageRoute<dynamic>(
-        builder: (BuildContext context) =>
-            AudioplayerPage(audiobooks: _audiobooks, index: index),
-      ),
-      ).then((_) => setState(() {}));
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute<dynamic>(
+            builder: (BuildContext context) =>
+                AudioplayerPage(audiobooks: _audiobooks, index: index),
+          ),
+        )
+        .then((_) => setState(() {}));
   }
 
   void _onBackArrowPressed() {
@@ -161,7 +186,10 @@ class _FolderViewPageState extends State<FolderViewPage> {
     final Directory dir = Directory(path);
     _folders.clear();
     _audiobooks.clear();
-    for (final FileSystemEntity item in dir.listSync()) {
+    final List<FileSystemEntity> filesList = dir.listSync();
+    int i = 0;
+    final int total = filesList.length;
+    for (final FileSystemEntity item in filesList) {
       // If not a folder, get audiobook item
       if (!Directory(item.path).existsSync()) {
         final Audiobook audiobook = await _getAudiobook(item.path);
@@ -170,6 +198,10 @@ class _FolderViewPageState extends State<FolderViewPage> {
       } else {
         _folders.add(item.path);
       }
+      i++;
+      setState(() {
+        _progress = "${(i / total * 100).toInt()}%";
+      });
     }
     _sortLists();
 
@@ -190,7 +222,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
   Future<Audiobook> _getAudiobook(String path) async {
     final Audiobook audiobook = await AudiobookService.getAudiobook(
       path,
-    //  forceReload: false,
+      //  forceReload: false,
     );
     log(audiobook.toString());
     return audiobook;

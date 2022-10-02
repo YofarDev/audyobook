@@ -304,7 +304,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
       _ready = false;
     });
 
-    _currentAudiobook.completed = true;
+
     await SharedPreferencesService.saveAudiobookInCache(
       _currentAudiobook,
     );

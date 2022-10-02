@@ -10,7 +10,6 @@ class Audiobook {
   Duration currentPosition;
   String? artworkPath;
   late int index;
-  late bool completed;
 
   Audiobook({
     required this.id,
@@ -67,5 +66,10 @@ class Audiobook {
   @override
   String toString() {
     return 'Audiobook(id: $id, path: $path, name: $name, album : $album, duration: $duration, currentPosition: $currentPosition, artworkPath : $artworkPath)';
+  }
+
+  bool isCompleted() {
+    return (currentPosition.inSeconds >= duration.inSeconds) ||
+        (currentPosition.inSeconds - 1 == duration.inSeconds);
   }
 }

@@ -4,7 +4,6 @@ import 'dart:io';
 
 // ignore: depend_on_referenced_packages
 import 'package:collection/collection.dart';
-
 import 'package:flutter/material.dart';
 
 import '../../models/audiobook.dart';
@@ -13,8 +12,6 @@ import '../../res/app_colors.dart';
 import '../../services/audiobooks_service.dart';
 import '../../utils/app_constants.dart';
 import '../../utils/app_utils.dart';
-import '../../utils/extensions.dart';
-import '../audioplayer/artwork.dart';
 import '../audioplayer/audioplayer_page.dart';
 import '../widgets/folder_app_bar.dart';
 import '../widgets/loading_widget.dart';

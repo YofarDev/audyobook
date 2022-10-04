@@ -18,6 +18,7 @@ import '../audioplayer/artwork.dart';
 import '../audioplayer/audioplayer_page.dart';
 import '../widgets/folder_app_bar.dart';
 import '../widgets/loading_widget.dart';
+import 'progress_audiobook.dart';
 
 class FolderViewPage extends StatefulWidget {
   final String folderPath;
@@ -167,61 +168,12 @@ class _FolderViewPageState extends State<FolderViewPage> {
     );
   }
 
-  Widget _infosBook() {
-    int current = 0;
-    int total = 0;
-    for (final Audiobook audiobook in _audiobooks) {
-      current += audiobook.currentPosition.inSeconds;
-      total += audiobook.duration.inSeconds;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: <Widget>[
-          if (_audiobooks.first.artworkPath != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Artwork(artworkPath: _audiobooks.first.artworkPath!),
-            ),
-          Text(
-            "${(current / total * 100).toInt()}%",
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0, bottom: 4),
-            child: LinearProgressIndicator(
-              backgroundColor: AppColors.primary,
-              color: AppColors.pastille,
-              value: current / total,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: <Widget>[
-              Text(
-                current.getFormatedTimer(withHours: true),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                total.getFormatedTimer(withHours: true),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _infosBook() => Padding(
+    padding: const EdgeInsets.all(16),
+    child: ProgressAudiobook(
+          audiobooks: _audiobooks,
+        ),
+  );
 
   Widget _lastPlayedWidget() => Padding(
         padding: const EdgeInsets.all(16),

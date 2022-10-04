@@ -13,6 +13,7 @@ import '../../services/audiobooks_service.dart';
 import '../../services/audioplayer_platform_switch.dart';
 import '../../services/shared_preferences_service.dart';
 import '../../utils/extensions.dart';
+import '../folder_view/progress_audiobook.dart';
 import '../widgets/loading_widget.dart';
 import 'artwork.dart';
 import 'increment_btn.dart';
@@ -107,6 +108,12 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
         child: Column(
           children: <Widget>[
             const Spacer(),
+            ProgressAudiobook(
+              audiobooks: widget.audiobooks,
+              minimal: true,
+              album: _currentAudiobook.album,
+            ),
+            const Spacer(),
             if (_currentAudiobook.artworkPath != null) _artwork(),
             const SizedBox(height: 24),
             _nameWidget(),
@@ -139,21 +146,63 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
         ],
       );
 
-  Widget _playerControls() => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget _playerControls() => Stack(
         children: <Widget>[
-          IncrementBtn(
-            value: -30,
-            onPressed: _onIncrementBtnPressed,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              InkWell(
+                onTap: _currentIndex == 0 ? null : () => _skip(-1),
+                child: Icon(
+                  Icons.skip_previous,
+                  color: _currentIndex == 0
+                      ? AppColors.primaryTransparent
+                      : AppColors.primary,
+                  size: 42,
+                ),
+              ),
+              const SizedBox(width: 16),
+              IncrementBtn(
+                value: -30,
+                onPressed: _onIncrementBtnPressed,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _playPauseBtn(),
+              ),
+              IncrementBtn(
+                value: 30,
+                onPressed: _onIncrementBtnPressed,
+              ),
+              const SizedBox(width: 16),
+              InkWell(
+                onTap: _currentIndex == widget.audiobooks.length - 1
+                    ? null
+                    : () => _skip(1),
+                child: Icon(
+                  Icons.skip_next,
+                  color: _currentIndex == widget.audiobooks.length - 1
+                      ? Colors.grey
+                      : AppColors.primary,
+                  size: 42,
+                ),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _playPauseBtn(),
-          ),
-          IncrementBtn(
-            value: 30,
-            onPressed: _onIncrementBtnPressed,
-          ),
+          Positioned(
+            bottom: 0,
+            right: 16,
+            top: 0,
+            child: Center(
+              child: Text(
+                "${_currentIndex + 1} / ${widget.audiobooks.length}",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          )
         ],
       );
 
@@ -225,6 +274,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
             total: _duration,
             onSeek: (Duration duration) {
               _player.seek(duration);
+              _currentAudiobook.currentPosition = duration;
             },
           );
         },
@@ -259,6 +309,12 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
     setState(() {
       _isPlaying = !_isPlaying;
     });
+  }
+
+  void _skip(int value) {
+    _currentIndex += value;
+    _currentAudiobook = widget.audiobooks[_currentIndex];
+    _initPlayer();
   }
 
   void _onIncrementBtnPressed(int value) async {

@@ -73,7 +73,6 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
           children: <Widget>[
             if (_currentAudiobook.artworkPath != null) _background(),
             if (_ready) _playerWidgets() else LoadingWidget(),
-            _topBtns(),
           ],
         ),
       ),
@@ -103,113 +102,113 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
         ),
       );
 
-  Widget _playerWidgets() => Padding(
+  Widget _playerWidgets() => Column(
+        children: <Widget>[
+          _topBtns(),
+          const Spacer(),
+          _topInfos(),
+          const Spacer(),
+          if (_currentAudiobook.artworkPath != null) _artwork(),
+          const SizedBox(height: 24),
+          _nameWidget(),
+          const SizedBox(height: 24),
+          _playerControls(),
+          const SizedBox(height: 24),
+          _seekBar(),
+          const Spacer(),
+          _speedControls(),
+          const Spacer(),
+        ],
+      );
+
+  Widget _topInfos() => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: <Widget>[
-            const Spacer(),
             ProgressAudiobook(
               audiobooks: widget.audiobooks,
               minimal: true,
               album: _currentAudiobook.album,
             ),
-            const Spacer(),
-            if (_currentAudiobook.artworkPath != null) _artwork(),
-            const SizedBox(height: 24),
-            _nameWidget(),
-            const SizedBox(height: 24),
-            _playerControls(),
-            const SizedBox(height: 24),
-            _seekBar(),
-            const Spacer(),
-            _speedControls(),
-            const Spacer(),
+            const SizedBox(height: 4),
+            Text(
+              "${_currentIndex + 1} / ${widget.audiobooks.length}",
+              style: const TextStyle(
+                fontFamily: 'Montserrat',
+                color: Colors.white,
+                fontSize: 9,
+              ),
+            )
           ],
         ),
       );
 
-  Widget _speedControls() => Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Text(
-              (_currentSpeed != 1) ? _getRealDuration() : " ",
-              style: const TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ),
-          ToggleSpeedBtns(
-            currentSpeed: _currentSpeed,
-            onChanged: _onSpeedChanged,
-          ),
-        ],
-      );
-
-  Widget _playerControls() => Stack(
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              InkWell(
-                onTap: _currentIndex == 0 ? null : () => _skip(-1),
-                child: Icon(
-                  Icons.skip_previous,
-                  color: _currentIndex == 0
-                      ? AppColors.primaryTransparent
-                      : AppColors.primary,
-                  size: 42,
-                ),
-              ),
-              const SizedBox(width: 16),
-              IncrementBtn(
-                value: -30,
-                onPressed: _onIncrementBtnPressed,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _playPauseBtn(),
-              ),
-              IncrementBtn(
-                value: 30,
-                onPressed: _onIncrementBtnPressed,
-              ),
-              const SizedBox(width: 16),
-              InkWell(
-                onTap: _currentIndex == widget.audiobooks.length - 1
-                    ? null
-                    : () => _skip(1),
-                child: Icon(
-                  Icons.skip_next,
-                  color: _currentIndex == widget.audiobooks.length - 1
-                      ? Colors.grey
-                      : AppColors.primary,
-                  size: 42,
-                ),
-              ),
-            ],
-          ),
-          Positioned(
-            bottom: 0,
-            right: 16,
-            top: 0,
-            child: Center(
+  Widget _speedControls() => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
               child: Text(
-                "${_currentIndex + 1} / ${widget.audiobooks.length}",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                ),
+                (_currentSpeed != 1) ? _getRealDuration() : " ",
+                style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
             ),
-          )
+            ToggleSpeedBtns(
+              currentSpeed: _currentSpeed,
+              onChanged: _onSpeedChanged,
+            ),
+          ],
+        ),
+      );
+
+  Widget _playerControls() => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          InkWell(
+            onTap: _currentIndex == 0 ? null : () => _skip(-1),
+            child: Icon(
+              Icons.skip_previous,
+              color: _currentIndex == 0
+                  ? AppColors.primaryTransparent
+                  : AppColors.primary,
+              size: 42,
+            ),
+          ),
+          const SizedBox(width: 10),
+          IncrementBtn(
+            value: -30,
+            onPressed: _onIncrementBtnPressed,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _playPauseBtn(),
+          ),
+          IncrementBtn(
+            value: 30,
+            onPressed: _onIncrementBtnPressed,
+          ),
+          const SizedBox(width: 10),
+          InkWell(
+            onTap: _currentIndex == widget.audiobooks.length - 1
+                ? null
+                : () => _skip(1),
+            child: Icon(
+              Icons.skip_next,
+              color: _currentIndex == widget.audiobooks.length - 1
+                  ? Colors.grey
+                  : AppColors.primary,
+              size: 42,
+            ),
+          ),
         ],
       );
 
-  Widget _topBtns() => Positioned(
-        left: 16,
-        top: 0,
-        right: 16,
+  Widget _topBtns() => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: <Widget>[
             IconButton(
@@ -265,17 +264,20 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
         builder: (BuildContext context, AsyncSnapshot<Duration> snapshot) {
           _currentPosition = snapshot.data ?? Duration.zero;
 
-          return ProgressBar(
-            progressBarColor: AppColors.primary,
-            thumbColor: AppColors.primary,
-            baseBarColor: Colors.white.withOpacity(0.24),
-            progress: _currentPosition,
-            timeLabelTextStyle: const TextStyle(color: Colors.white),
-            total: _duration,
-            onSeek: (Duration duration) {
-              _player.seek(duration);
-              _currentAudiobook.currentPosition = duration;
-            },
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: ProgressBar(
+              progressBarColor: AppColors.primary,
+              thumbColor: AppColors.primary,
+              baseBarColor: Colors.white.withOpacity(0.24),
+              progress: _currentPosition,
+              timeLabelTextStyle: const TextStyle(color: Colors.white),
+              total: _duration,
+              onSeek: (Duration duration) {
+                _player.seek(duration);
+                _currentAudiobook.currentPosition = duration;
+              },
+            ),
           );
         },
       );

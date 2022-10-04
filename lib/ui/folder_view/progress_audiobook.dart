@@ -83,32 +83,29 @@ class ProgressAudiobook extends StatelessWidget {
     int current,
     int total,
   ) =>
-      Row(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Text(
-            "$album :",
+            album,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 14,
               fontFamily: 'Montserrat',
             ),
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 42, right: 16),
-              child: LinearProgressIndicator(
-                backgroundColor: AppColors.primary,
-                color: AppColors.pastille,
-                value: current / total,
+          const SizedBox(height: 8),
+          Row(
+            children: <Widget>[
+              const Spacer(),
+              Expanded(
+                child: LinearProgressIndicator(
+                  backgroundColor: AppColors.primary,
+                  color: AppColors.pastille,
+                  value: current / total,
+                ),
               ),
-            ),
-          ),
-          Text(
-            "(${(current / total * 100).toInt()}%)",
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-            ),
+            ],
           ),
         ],
       );

@@ -8,9 +8,11 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/audiobook.dart';
+import '../../models/last_played.dart';
 import '../../res/app_colors.dart';
 import '../../services/audiobooks_service.dart';
 import '../../utils/app_constants.dart';
+import '../../utils/app_utils.dart';
 import '../../utils/extensions.dart';
 import '../audioplayer/artwork.dart';
 import '../audioplayer/audioplayer_page.dart';
@@ -34,14 +36,16 @@ class _FolderViewPageState extends State<FolderViewPage> {
   final List<String> _folders = <String>[];
   final List<Audiobook> _audiobooks = <Audiobook>[];
 
-  bool isRoot = true;
+  bool _isRoot = true;
   final Set<String> _currentNavigation = <String>{};
   int _currentIndex = 0;
+  LastPlayed? _lastPlayed;
 
   @override
   void initState() {
     super.initState();
     _getChildren(widget.folderPath);
+    _getLastPlayed();
   }
 
   @override
@@ -51,9 +55,10 @@ class _FolderViewPageState extends State<FolderViewPage> {
       children: <Widget>[
         FolderAppBar(
           title: _ready ? _currentNavigation.elementAt(_currentIndex) : "",
-          isRoot: isRoot,
+          isRoot: _isRoot,
           onBackArrowPressed: _onBackArrowPressed,
         ),
+        if (_lastPlayed != null) _lastPlayedWidget(),
         if (_ready)
           _childrenFolderList()
         else
@@ -218,6 +223,35 @@ class _FolderViewPageState extends State<FolderViewPage> {
     );
   }
 
+  Widget _lastPlayedWidget() => Padding(
+        padding: const EdgeInsets.all(16),
+        child: InkWell(
+          onTap: _openLastPlayed,
+          child: ListTile(
+            leading: const Icon(Icons.play_arrow, color: Colors.white),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text(
+                  "Dernier joué :",
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_lastPlayed!.album} (${_lastPlayed!.title})',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Montserrat',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
 //////////////////////////////// LISTENERS ////////////////////////////////
 
   void _onFolderTap(String path) {
@@ -236,15 +270,56 @@ class _FolderViewPageState extends State<FolderViewPage> {
                 AudioplayerPage(audiobooks: _audiobooks, index: index),
           ),
         )
-        .then((_) => setState(() {}));
+        .then(
+          (_) => setState(() {
+            _getChildren(_currentNavigation.elementAt(_currentIndex));
+          }),
+        );
   }
 
   void _onBackArrowPressed() {
-    if (isRoot) return;
+    if (_isRoot) return;
     final String last = _currentNavigation.elementAt(_currentIndex - 1);
     _currentNavigation.remove(_currentNavigation.elementAt(_currentIndex));
     _currentIndex--;
     _getChildren(last);
+  }
+
+  void _openLastPlayed() async {
+    final String path = AppUtils.getPathFromId(_lastPlayed!.id);
+    final List<String> folders = path.split(AppConstants.getSlash());
+    String pathTo = widget.folderPath;
+    _currentNavigation.clear();
+    _currentNavigation.add(widget.folderPath);
+    _currentIndex = 0;
+    for (final String f in folders) {
+      if (f != folders.last) {
+        pathTo = "$pathTo${AppConstants.getSlash()}$f";
+        _currentNavigation.add(pathTo);
+      }
+    }
+    _currentIndex = _currentNavigation.length - 1;
+    _isRoot = false;
+    final Directory dir = Directory(pathTo);
+    final List<FileSystemEntity> filesList = dir.listSync();
+    _audiobooks.clear();
+    _folders.clear();
+    for (final FileSystemEntity item in filesList) {
+      // If not a folder, get audiobook item
+      if (!Directory(item.path).existsSync()) {
+        if (!item.path.endsWith('.mp3')) continue;
+        final Audiobook audiobook = await _getAudiobook(item.path);
+        _audiobooks.add(audiobook);
+      } else {
+        _folders.add(item.path);
+      }
+    }
+    _sortLists();
+    final int index =
+        _audiobooks.indexWhere((Audiobook a) => a.id == _lastPlayed!.id);
+    _audiobooks[index].currentPosition =
+        await AudiobookService.getPositionFromServer(_audiobooks[index]);
+    _onAudioFileTap(index);
   }
 
 //////////////////////////////// FUNCTIONS ////////////////////////////////
@@ -257,6 +332,7 @@ class _FolderViewPageState extends State<FolderViewPage> {
     for (final FileSystemEntity item in filesList) {
       // If not a folder, get audiobook item
       if (!Directory(item.path).existsSync()) {
+        if (!item.path.endsWith('.mp3')) continue;
         final Audiobook audiobook = await _getAudiobook(item.path);
         _audiobooks.add(audiobook);
       } else {
@@ -266,9 +342,9 @@ class _FolderViewPageState extends State<FolderViewPage> {
     await _getSavedPositions();
     _sortLists();
 
-    isRoot = path == widget.folderPath;
+    _isRoot = path == widget.folderPath;
 
-    if (!isRoot) {
+    if (!_isRoot) {
       _currentNavigation.add(path);
     } else {
       _currentNavigation.clear();
@@ -310,5 +386,10 @@ class _FolderViewPageState extends State<FolderViewPage> {
         audiobook.currentPosition = map[audiobook.id]!;
       }
     }
+  }
+
+  Future<void> _getLastPlayed() async {
+    _lastPlayed = await AudiobookService.getLastPlayed();
+    if (_lastPlayed != null) setState(() {});
   }
 }

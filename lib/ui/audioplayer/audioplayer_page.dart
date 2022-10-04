@@ -33,6 +33,7 @@ class AudioplayerPage extends StatefulWidget {
 }
 
 class _AudioplayerPageState extends State<AudioplayerPage> {
+  // ignore: always_specify_types, prefer_typing_uninitialized_variables
   late var _player;
   late Audiobook _currentAudiobook;
   late int _currentIndex;
@@ -334,6 +335,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
     setState(() {
       _ready = true;
     });
+    _updateLastPlayed();
   }
 
   void _initListeners() {
@@ -409,4 +411,8 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
   Audiobook _getCurrentAudiobook() => widget.audiobooks.firstWhere(
         (Audiobook a) => a.index == _currentIndex,
       );
+
+  void _updateLastPlayed() async {
+    await AudiobookService.saveLastPlayed(_currentAudiobook);
+  }
 }

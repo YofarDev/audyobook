@@ -20,6 +20,16 @@ class AppUtils {
         .replaceAll(' ', '_');
   }
 
+  static String getPathFromId(String id) {
+    return id
+        .replaceAll(
+          '||',
+          AppConstants.getSlash(),
+        )
+        .replaceAll('_', ' ')
+        .substring(1);
+  }
+
   static String getAlbumIdFromPath(String path) {
     return getAlbumFromPath(path).replaceAll(' ', '_');
   }

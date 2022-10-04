@@ -6,6 +6,7 @@ import 'package:just_audio/just_audio.dart';
 import '../models/audiobook.dart';
 
 class AudioplayerPlatformSwitch {
+  // ignore: always_specify_types, prefer_typing_uninitialized_variables, type_annotate_public_apis
   static late var player;
 
   static void init() {

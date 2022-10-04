@@ -11,6 +11,7 @@ import 'package:id3tag/id3tag.dart';
 import 'package:mp3_info/mp3_info.dart';
 
 import '../models/audiobook.dart';
+import '../models/last_played.dart';
 import '../utils/app_utils.dart';
 import 'shared_preferences_service.dart';
 
@@ -147,7 +148,8 @@ class AudiobookService {
   }
 
   static Future<Map<String, Duration>> getAllPostionsForAlbum(
-      String album,) async {
+    String album,
+  ) async {
     final Map<String, Duration> map = <String, Duration>{};
     // MOBILE
     if (Platform.isAndroid || Platform.isIOS) {
@@ -174,5 +176,37 @@ class AudiobookService {
       }
     }
     return map;
+  }
+
+  static Future<void> saveLastPlayed(Audiobook audiobook) async {
+    final Map<String, dynamic> map = <String, dynamic>{
+      "album": audiobook.album,
+      "id": audiobook.id,
+      "title" : audiobook.name,
+    };
+    if (Platform.isAndroid || Platform.isIOS) {
+      await firestore.doc("last-played").set(map);
+    } else {
+      await Firestore.instance
+          .collection("audiobooks")
+          .document("last-played")
+          .set(map);
+    }
+  }
+
+  static Future<LastPlayed> getLastPlayed() async {
+    LastPlayed last;
+    if (Platform.isAndroid || Platform.isIOS) {
+      final DocumentSnapshot<Object> doc =
+          await firestore.doc("last-played").get();
+      last = LastPlayed.fromMap(doc.data()! as Map<String, dynamic>);
+    } else {
+      final desktop.Document doc = await Firestore.instance
+          .collection("audiobooks")
+          .document("last-played")
+          .get();
+      last = LastPlayed.fromMap(doc.map);
+    }
+    return last;
   }
 }

@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:desktop_window/desktop_window.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firedart/firestore/firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'res/app_theme.dart';
 import 'services/audio_handler_service.dart';
@@ -24,8 +24,20 @@ Future<void> main() async {
 // Init firebase
     await Firebase.initializeApp();
   } else {
-    await DesktopWindow.setWindowSize(const Size(500, 900));
-    await DesktopWindow.setMinWindowSize(const Size(500, 900));
+    await windowManager.ensureInitialized();
+
+    const WindowOptions windowOptions = WindowOptions(
+      size: Size(500, 900),
+      skipTaskbar: false,
+      minimumSize: Size(500, 900),
+      maximumSize: Size(500, 900),
+      titleBarStyle: TitleBarStyle.normal,
+    );
+    
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
     Firestore.initialize("audyoplayer");
   }
 

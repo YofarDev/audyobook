@@ -35,7 +35,7 @@ dependencies:
   pausable_timer:
   # (desktop)
   firedart:
-  desktop_window:
+  window_manager:
   mp3_info:
   id3tag:
   audioplayers:

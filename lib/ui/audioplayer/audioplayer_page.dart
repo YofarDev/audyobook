@@ -341,6 +341,7 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
     _currentPosition =
         await AudiobookService.getPositionFromServer(_currentAudiobook);
     _player.seek(_currentPosition);
+    _currentAudiobook.currentPosition = _currentPosition;
   }
 
   void _onCloudUploadPressed() async {

@@ -26,6 +26,7 @@ class ProgressAudiobook extends StatelessWidget {
       current += audiobook.currentPosition.inSeconds;
       total += audiobook.duration.inSeconds;
     }
+
     if (minimal) {
       return _minimal(current, total);
     } else {

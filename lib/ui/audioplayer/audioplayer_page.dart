@@ -431,8 +431,8 @@ class _AudioplayerPageState extends State<AudioplayerPage> {
       if (_timer.tick % 5 == 0) {
         _savePositionLocally();
       }
-      // Save on server every 30s
-      if (_timer.tick % 30 == 0 && _syncToServer) {
+      // Save on server every 10s
+      if (_timer.tick % 10 == 0 && _syncToServer) {
         _savePositionOnServer();
       }
       _timer
